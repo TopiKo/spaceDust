@@ -5,7 +5,7 @@ v = np.zeros((len(r), 2))
 a = np.zeros((len(r), 2))
 masses_ = np.ones(len(r))*2
 
-r_ = np.ma.array(r, mask=False)
+#r_ = np.ma.array(r, mask=False)
 v_ = np.ma.array(v, mask=False)
 a_ = np.ma.array(a, mask=False)
 F_ = np.zeros(len(r_))
