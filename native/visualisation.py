@@ -65,7 +65,7 @@ class VisualScene:
             self.window.destroy()
             self.autoloop = False
         else:
-            self.scene.move_particles()
+            self.scene.step()
             self.draw_scene()
             if self.autoloop:
                 self.window.after(self.delay, self.loop)
