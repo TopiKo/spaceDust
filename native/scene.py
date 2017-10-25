@@ -82,13 +82,12 @@ class Scene:
             self.r_.mask[i] = False
 
     def update_forces(self):
-        print(self.directions.shape)
         norms = np.linalg.norm(self.directions, axis=2, keepdims=True)  # *masses
 
         masses_arr = np.tile(self.masses, self.num_particles).reshape(self.directions.shape[:2] + (1,))
 
         dirs_m = self.directions / norms * masses_arr
-        self.F_ = np.dot(np.diag(self.masses), (dirs_m / norms ** 2).sum(axis=1))
+        self.forces = np.dot(np.diag(self.masses), (dirs_m / norms ** 2).sum(axis=1))
 
     def update_pos_and_velo(self):
         """
@@ -98,6 +97,7 @@ class Scene:
         """
         self.time += self.dt
         self.counter += 1
+        self.accel_array = np.dot(np.diag(1/self.masses),self.forces)
         self.velocity_array += self.accel_array * self.dt
         self.last_position_array = np.array(self.position_array)
         self.position_array += self.velocity_array * self.dt

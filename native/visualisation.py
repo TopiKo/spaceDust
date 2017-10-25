@@ -15,7 +15,7 @@ class VisualScene:
     def __init__(self, scene):
         """
         Initializes a visual interface for the simulation. Updates every fixed amount of seconds.
-        Represents the scene on a canvas.
+        Represents the scene on a canvas, with the center being (0,0)
         Important: this class progresses the simulation. After each drawing and potential delay,
         the visualisation calls for the progression to the next time step.
         Although it might be cleaner to move that to the simulation manager.
@@ -118,7 +118,7 @@ class VisualScene:
         Uses vectorized operations for speed increments
         :return: relative start coordinates, relative end coordinates.
         """
-        rel_pos_array = self.scene.position_array / self.scene.size.array
+        rel_pos_array = (self.scene.position_array) / self.scene.size.array + np.array([0.5,0.5])
         rel_size_array = np.ones(
             self.scene.position_array.shape) * self.scene.particle_size / self.scene.size.array * self.size.array
         vis_pos_array = np.hstack((rel_pos_array[:, 0][:, None], 1 - rel_pos_array[:, 1][:, None])) * self.size.array
@@ -135,4 +135,4 @@ class VisualScene:
         :param coord: coordinates (fractions to be converted)
         :return: a Size with the coordinates of screen
         """
-        return Size([coord[0], 1 - coord[1]]) * self.size
+        return Size([0.5 + coord[0], 1.5 - coord[1]]) * self.size
