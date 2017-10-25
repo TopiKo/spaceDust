@@ -27,20 +27,34 @@ class Scene:
         self.particle_size = np.zeros([self.num_particles,2])
         self.active_entries = np.ones(self.num_particles, dtype=bool)
 
-        self._init_particles()
+        # Parameters
+        d = 3
+        v = 1
+        self._init_particles(d,v)
         self.status = 'RUNNING'
 
-    def _init_particles(self):
+    def _init_particles(self, d, v):
         """
         Protected method that determines how the particles are initially distributed,
         as well as with what properties they come. Overridable.
         :param: Initial number of particles
         :return: None
         """
-        self.position_array[:] = np.random.random(self.position_array.shape)*self.size.array
-        self.velocity_array[:] = np.random.random(self.position_array.shape)
+        # Positions
+        r = np.random.normal(loc=d, scale=d / 4, size=self.num_particles)
+        thetas = np.random.rand(self.num_particles) * 2 * np.pi
+        self.position_array[:, 0] = r * np.cos(thetas)
+        self.position_array[:, 1] = r * np.sin(thetas)
+
+        # Velocities
+        rn = np.zeros((self.num_particles, 3))
+        zs = np.zeros(rn.shape)
+        rn[:,:2] = self.position_array
+        zs[:, 2] = v
+        self.velocity_array = np.cross(zs,rn)[:,:2]
+
         self.force_array[:] = np.random.random(self.position_array.shape)
-        self.particle_size[:] = np.random.random(self.position_array.shape)
+        self.particle_size[:] = np.random.random(self.position_array.shape)+1
 
     def is_within_boundaries(self, coord: Point):
         """
