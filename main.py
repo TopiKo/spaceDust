@@ -2,7 +2,7 @@
 from native.visualisation import VisualScene
 from native.scene import Scene
 
-scene = Scene(100)
+scene = Scene(30)
 vis = VisualScene(scene)
 
 vis.start()

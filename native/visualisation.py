@@ -25,7 +25,7 @@ class VisualScene:
         init_size = Size([1000, 1000])
         self.scene = scene
         self.autoloop = True
-        self.delay = 10
+        self.delay = 2
         self.window = tkinter.Tk()
         self.window.title("SpaceDust")
         self.window.geometry("%dx%d" % (init_size[0], init_size[1]))
