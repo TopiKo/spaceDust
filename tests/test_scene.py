@@ -35,6 +35,7 @@ class TestScene(TestCase):
         scene = Scene(n)
         scene.position_array[:] = np.array([[1, 0], [0, 1], [-1, 0], [0, -1]])
         scene.masses[:] = np.array([2, 3, 4, 5])
+        scene._init_particles()
         scene.update_directions()
         scene.update_forces()
         scene.update_pos_and_velo()
