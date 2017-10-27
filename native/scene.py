@@ -33,11 +33,10 @@ class Scene:
         self.g = 30
         self._init_particles()
         self.status = 'RUNNING'
-        self.trans_pos = np.zeros((self.num_particles, self.num_particles, 2))
-        self.wild_pos = np.zeros((self.num_particles, self.num_particles, 2))
-        self.diag_index = np.arange(self.num_particles)
-        self.distances = np.zeros((self.num_particles, self.num_particles, 1))
-        self.planet_contributions = np.zeros((self.num_particles, self.num_particles, 2))
+
+        # Much used arrays
+        self.range = np.arange(self.num_particles)
+        self.ones = np.ones(self.num_particles)[:,None]
 
     def _init_particles(self):
         """
@@ -71,17 +70,18 @@ class Scene:
         return within_boundaries
 
     def update_directions(self):
-        self.trans_pos[:] = np.tile(self.position_array, self.num_particles).reshape(
+        trans_pos = np.tile(self.position_array, self.num_particles).reshape(
             (self.num_particles, self.num_particles, 2))
-        self.wild_pos = np.transpose(self.trans_pos, (1, 0, 2))
-        self.pos_difference[:] = self.wild_pos - self.trans_pos
-        self.pos_difference[self.diag_index, self.diag_index, :] = self.mask
+        wild_pos = np.transpose(trans_pos, (1, 0, 2))
+        self.pos_difference = wild_pos - trans_pos
+        self.pos_difference[self.range, self.range, :] = self.mask
 
     def update_forces(self):
-        self.squared_distances = self.pos_difference[:, :, 0] ** 2 + self.pos_difference[:, :, 1] ** 2
-        self.planet_contributions = self.pos_difference * (self.tiled_masses / self.squared_distances * np.sqrt(
-            self.squared_distances))[:, :, None]
-        self.accel_array = self.planet_contributions.sum(axis=1) * self.g
+        squared_distances = self.pos_difference[:, :, 0] ** 2 + self.pos_difference[:, :, 1] ** 2
+        planet_contributions = self.pos_difference * (self.tiled_masses / (squared_distances * np.sqrt(
+            squared_distances)))[:, :, None]
+        self.accel_array = np.hstack((np.dot(planet_contributions[:, :, 0], self.ones),
+                                      np.dot(planet_contributions[:, :, 1], self.ones))) * self.g
 
     def update_pos_and_velo(self):
         """
