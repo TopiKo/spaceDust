@@ -20,10 +20,9 @@ class TestScene(TestCase):
         scene.masses[:] = 1
         scene.update_directions()
         scene.update_forces()
-        forces = np.array([[-2, -4], [2, 4]]) / (20 * np.sqrt(20)) * scene.g
-        error = np.linalg.norm(scene.force_array - forces)
-        print(forces)
-        print(scene.force_array)
+        scene.update_pos_and_velo()
+        accel = np.array([[-2, -4], [2, 4]]) / (20 * np.sqrt(20)) * scene.g
+        error = np.linalg.norm(scene.accel_array - accel)
         self.assertAlmostEqual(error, 0)
 
     def test_4_particles(self):
@@ -38,8 +37,7 @@ class TestScene(TestCase):
         scene.masses[:] = np.array([2, 3, 4, 5])
         scene.update_directions()
         scene.update_forces()
-        first_force = -scene.masses[0] * scene.g * np.array([2 * np.sqrt(2) + 1,np.sqrt(2)/2])
-        error = np.linalg.norm(first_force - scene.force_array[0,:])
-        print(first_force)
-        print(scene.force_array[0,:])
+        scene.update_pos_and_velo()
+        first_accel = - scene.g * np.array([2 * np.sqrt(2) + 1,np.sqrt(2)/2])
+        error = np.linalg.norm(first_accel - scene.accel_array[0,:])
         self.assertAlmostEqual(error, 0)
