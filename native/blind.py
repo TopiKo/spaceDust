@@ -10,7 +10,8 @@ class NoVisualScene(VisualScene):
 
     def start(self):
         self.start_time = time.time()
-        while not self.scene.status == 'DONE':
+        #while not self.scene.status == 'DONE':
+        for _ in range(20):
             try:
                 self.scene.step()
                 # print("Iteration took %.4f seconds" % (time.time() - self.time))
