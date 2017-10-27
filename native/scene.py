@@ -47,7 +47,7 @@ class Scene:
         :return: None
         """
         # Positions
-        self.position_array[:] = self.size.array*(0.5 - np.random.random([self.num_particles,2]))
+        self.position_array[:] = self.size.array * (0.5 - np.random.random([self.num_particles, 2]))
         # Velocities
         rn = np.zeros((self.num_particles, 3))
         zs = np.zeros(rn.shape)
@@ -60,7 +60,6 @@ class Scene:
         # Masses
         self.tiled_masses = np.tile(self.masses, self.num_particles).reshape((self.num_particles, self.num_particles))
         np.fill_diagonal(self.tiled_masses, 0)
-        self.tiled_masses = self.tiled_masses[:, :, None]  # Probably not a time saver
 
     def is_within_boundaries(self, coord: Point):
         """
@@ -79,9 +78,10 @@ class Scene:
         self.pos_difference[self.diag_index, self.diag_index, :] = self.mask
 
     def update_forces(self):
-        self.distances = np.linalg.norm(self.pos_difference, axis=2, keepdims=True)  # *masses
-        self.planet_contributions = self.pos_difference * self.tiled_masses / self.distances ** 3
-        self.accel_array= self.planet_contributions.sum(axis=1) * self.g
+        self.squared_distances = self.pos_difference[:, :, 0] ** 2 + self.pos_difference[:, :, 1] ** 2
+        self.planet_contributions = self.pos_difference * (self.tiled_masses / self.squared_distances * np.sqrt(
+            self.squared_distances))[:, :, None]
+        self.accel_array = self.planet_contributions.sum(axis=1) * self.g
 
     def update_pos_and_velo(self):
         """
