@@ -17,9 +17,14 @@ class NoVisualScene(VisualScene):
                 # print("Iteration took %.4f seconds" % (time.time() - self.time))
                 # print("Time step %d" % self.scene.counter)
             except KeyboardInterrupt:
-                self.end_time = time.time()
                 print("\nUser interrupted simulation")
-                time_spent = self.end_time - self.start_time
-                print("%d iterations in %.2f seconds (%.4e per iteration)" % (
-                self.scene.counter, time_spent, time_spent / self.scene.counter))
-                self.scene.status = 'DONE'
+                self.finish()
+        self.finish()
+
+    def finish(self):
+        self.end_time = time.time()
+        time_spent = self.end_time - self.start_time
+        print("%d iterations in %.2f seconds (%.4e per iteration)" % (
+            self.scene.counter, time_spent, time_spent / self.scene.counter))
+        self.scene.status = 'DONE'
+
