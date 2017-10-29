@@ -36,7 +36,7 @@ class Scene:
 
         # Much used arrays
         self.range = np.arange(self.num_particles)
-        self.ones = np.ones(self.num_particles)[:,None]
+        self.ones = np.ones(self.num_particles)[:, None]
 
     def _init_particles(self):
         """
