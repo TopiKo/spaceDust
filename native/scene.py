@@ -25,12 +25,14 @@ class Scene:
         self.accel_array = np.zeros([self.num_particles, 2])
         self.force_array = np.zeros([self.num_particles, 2])
         self.particle_size = np.zeros([self.num_particles, 2])
-        self.masses = np.ones(self.num_particles)
+        self.masses = np.ones(self.num_particles) + np.random.rand(self.num_particles)*.1
 
         self.pos_difference = np.zeros((self.num_particles, self.num_particles, 2))
         self.mask = 4
+        self.exclude_mask = np.zeros(self.num_particles).astype(bool)
         # Parameters
         self.g = 30
+        self.collision_threshold = .1
         self._init_particles()
         self.status = 'RUNNING'
 
@@ -54,7 +56,7 @@ class Scene:
         zs[:, 2] = 1. / 100
         self.velocity_array = np.cross(zs, rn)[:, :2]
 
-        self.particle_size[:] = np.random.random(self.position_array.shape) + 1
+        self.particle_size[:] = np.ones(self.position_array.shape) #np.random.random(self.position_array.shape) + 1
 
         # Masses
         self.tiled_masses = np.tile(self.masses, self.num_particles).reshape((self.num_particles, self.num_particles))
@@ -94,9 +96,34 @@ class Scene:
         self.velocity_array += self.accel_array * self.dt
         self.position_array += self.velocity_array * self.dt
 
+    def update_masses(self):
+        """
+        See whether two particles are within threshold. If so puts the mass of lighter one to heavier one
+        and performs collsion where momentum is conserved according to p1_i + p2_i = p_end =>
+        v_end = (m1*v1_i + m2*v2_i)/(m1 + m2)
+        """
+        collision_idxs = np.where((self.pos_difference[:, :, 0] ** 2 + \
+            self.pos_difference[:, :, 1] ** 2) < self.collision_threshold**2)
+        first_smaller = self.masses[collision_idxs[0]] < self.masses[collision_idxs[1]]
+        annihilate = collision_idxs[0][first_smaller]
+        survive = collision_idxs[1][first_smaller]
+
+        self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
+                                        self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
+                                        (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
+        self.masses[survive] += self.masses[annihilate]
+        self.exclude_mask[annihilate] = True
+        self.particle_size[:] = self.masses[:,np.newaxis]
+
     def step(self):
         self.time += self.dt
         self.counter += 1
         self.update_directions()
+        #self.update_masses()
         self.update_forces()
         self.update_pos_and_velo()
+        if self.counter%1000 == 0:
+            print('Momentum = ', (self.masses[:, np.newaxis]*self.velocity_array).sum(axis = 0))
+            print('Center of mass = ', (self.masses[:, np.newaxis]*self.position_array).sum(axis = 0))
+            print()
+            #print(self.exclude_mask)

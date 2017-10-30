@@ -3,7 +3,8 @@ from native.visualisation import VisualScene
 from native.blind import NoVisualScene
 from native.scene import Scene
 
-scene = Scene(3000)
-vis = NoVisualScene(scene)
+scene = Scene(200)
+#vis = NoVisualScene(scene)
+vis = VisualScene(scene)
 
 vis.start()
