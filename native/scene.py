@@ -32,7 +32,7 @@ class Scene:
         self.exclude_mask = np.zeros(self.num_particles).astype(bool)
         # Parameters
         self.g = 30
-        self.density = .1
+        self.density = .2
         self._init_particles()
         self.status = 'RUNNING'
 
@@ -102,8 +102,6 @@ class Scene:
         and performs collsion where momentum is conserved according to p1_i + p2_i = p_end =>
         v_end = (m1*v1_i + m2*v2_i)/(m1 + m2)
         """
-        #collision_idxs = np.where((self.pos_difference[:, :, 0] ** 2 + \
-    #        self.pos_difference[:, :, 1] ** 2) < self.collision_threshold**2)
 
         sizesnn = np.tile(self.particle_size[:,0], self.num_particles).reshape(
             (self.num_particles, self.num_particles))
@@ -115,9 +113,11 @@ class Scene:
             self.pos_difference[:, :, 1] ** 2) < threshold**2)
 
 
-        first_smaller = self.masses[collision_idxs[0]] < self.masses[collision_idxs[1]]
+        first_smaller = self.masses[collision_idxs[0]] <= self.masses[collision_idxs[1]]
         annihilate = collision_idxs[0][first_smaller]
         survive = collision_idxs[1][first_smaller]
+        if len(survive) != 0 or len(annihilate) != 0:
+            print(annihilate, survive)
 
         self.position_array[survive] = (self.position_array[survive]*self.masses[survive, np.newaxis] + \
                                         self.position_array[annihilate]*self.masses[annihilate, np.newaxis])/ \
@@ -126,19 +126,25 @@ class Scene:
         self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
                                         self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
                                         (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
+
         self.masses[survive] += self.masses[annihilate]
         self.exclude_mask[annihilate] = True
+        # NASTY HACKTAK and does not even work :(
+        self.masses[annihilate] = 0
+        self.velocity_array[annihilate] = [0,0]
+        self.position_array[annihilate] = [1e9,1e9] + np.random.rand(2)
+        # NASTY HACKTAK
         self.particle_size[:] = np.sqrt(self.masses[:,np.newaxis])*self.density
 
     def step(self):
         self.time += self.dt
         self.counter += 1
         self.update_directions()
-        #self.update_masses()
+        self.update_masses()
         self.update_forces()
         self.update_pos_and_velo()
         if self.counter%1000 == 0:
             print('Momentum = ', (self.masses[:, np.newaxis]*self.velocity_array).sum(axis = 0))
-            print('Center of mass = ', (self.masses[:, np.newaxis]*self.position_array).sum(axis = 0))
+            print('Center of mass (can change) = ', (self.masses[:, np.newaxis]*self.position_array).sum(axis = 0))
             print()
             #print(self.exclude_mask)
