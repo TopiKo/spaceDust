@@ -50,7 +50,8 @@ class Scene:
         # Positions
         self.position_array[:] = self.size.array * (0.5 - np.random.random([self.num_particles, 2]))
         if test:
-            self.position_array[:] = self.size.array * [[0.1,0.1], [-.1,-.1],[0.2,-0.2], [-.2,.2]]
+            self.position_array[:] = self.size.array * [[0.03,0.03], [-.03,-.03],[0.06,-0.06], [-.06,.06]]
+
 
         # Velocities
         rn = np.zeros((self.num_particles, 3))
@@ -67,6 +68,8 @@ class Scene:
         # Masses
         self.tiled_masses = np.tile(self.masses, self.num_particles).reshape((self.num_particles, self.num_particles))
         np.fill_diagonal(self.tiled_masses, 0)
+
+        print(self.tiled_masses)
 
     def is_within_boundaries(self, coord: Point):
         """
@@ -123,22 +126,27 @@ class Scene:
         annihilate = collision_idxs[0][first_smaller]
         survive = collision_idxs[1][first_smaller]
 
-        self.position_array[survive] = (self.position_array[survive]*self.masses[survive, np.newaxis] + \
-                                        self.position_array[annihilate]*self.masses[annihilate, np.newaxis])/ \
-                                        (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
+        if len(survive) != 0 or len(annihilate) != 0:
+            self.position_array[survive] = (self.position_array[survive]*self.masses[survive, np.newaxis] + \
+                                            self.position_array[annihilate]*self.masses[annihilate, np.newaxis])/ \
+                                            (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
 
-        self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
-                                        self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
-                                        (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
+            self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
+                                            self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
+                                            (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
 
-        self.masses[survive] += self.masses[annihilate]
-        self.exclude_mask[annihilate] = True
+            self.masses[survive] += self.masses[annihilate]
+            self.exclude_mask[annihilate] = True
 
-        self.masses[annihilate] = 0
-        self.tiled_masses[:,annihilate] = 0
-        self.particle_size[annihilate] = [0,0]
+            self.tiled_masses[:,annihilate] = 0
+            self.particle_size[annihilate] = [0,0]
 
-        self.tiled_masses[:,survive] += self.masses[annihilate]
+            self.tiled_masses[:,survive] += self.masses[annihilate]
+            np.fill_diagonal(self.tiled_masses, 0)
+
+            self.masses[annihilate] = 0
+            print(self.tiled_masses)
+            print()
 
         #if len(survive) != 0 or len(annihilate) != 0:
         #    print(annihilate, survive)
