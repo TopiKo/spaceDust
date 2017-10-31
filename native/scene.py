@@ -32,7 +32,7 @@ class Scene:
         self.exclude_mask = np.zeros(self.num_particles).astype(bool)
         # Parameters
         self.g = 30
-        self.collision_threshold = .1
+        self.density = .1
         self._init_particles()
         self.status = 'RUNNING'
 
@@ -56,7 +56,7 @@ class Scene:
         zs[:, 2] = 1. / 100
         self.velocity_array = np.cross(zs, rn)[:, :2]
 
-        self.particle_size[:] = np.ones(self.position_array.shape) #np.random.random(self.position_array.shape) + 1
+        self.particle_size[:] = np.sqrt(self.masses[:,np.newaxis])*self.density #np.random.random(self.position_array.shape) + 1
 
         # Masses
         self.tiled_masses = np.tile(self.masses, self.num_particles).reshape((self.num_particles, self.num_particles))
@@ -102,18 +102,33 @@ class Scene:
         and performs collsion where momentum is conserved according to p1_i + p2_i = p_end =>
         v_end = (m1*v1_i + m2*v2_i)/(m1 + m2)
         """
+        #collision_idxs = np.where((self.pos_difference[:, :, 0] ** 2 + \
+    #        self.pos_difference[:, :, 1] ** 2) < self.collision_threshold**2)
+
+        sizesnn = np.tile(self.particle_size[:,0], self.num_particles).reshape(
+            (self.num_particles, self.num_particles))
+        sizesnnT = np.transpose(sizesnn)
+        threshold = sizesnn + sizesnnT
+
+
         collision_idxs = np.where((self.pos_difference[:, :, 0] ** 2 + \
-            self.pos_difference[:, :, 1] ** 2) < self.collision_threshold**2)
+            self.pos_difference[:, :, 1] ** 2) < threshold**2)
+
+
         first_smaller = self.masses[collision_idxs[0]] < self.masses[collision_idxs[1]]
         annihilate = collision_idxs[0][first_smaller]
         survive = collision_idxs[1][first_smaller]
+
+        self.position_array[survive] = (self.position_array[survive]*self.masses[survive, np.newaxis] + \
+                                        self.position_array[annihilate]*self.masses[annihilate, np.newaxis])/ \
+                                        (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
 
         self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
                                         self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
                                         (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
         self.masses[survive] += self.masses[annihilate]
         self.exclude_mask[annihilate] = True
-        self.particle_size[:] = self.masses[:,np.newaxis]
+        self.particle_size[:] = np.sqrt(self.masses[:,np.newaxis])*self.density
 
     def step(self):
         self.time += self.dt
