@@ -14,7 +14,7 @@ class Scene:
         :return: scene instance.
         """
         self.time = 0
-        self.dt = 0.005
+        self.dt = 0.001
         self.counter = 0
         self.size = Size([100, 100])
         self.num_particles = num_particles
@@ -32,7 +32,7 @@ class Scene:
         self.exclude_mask = np.zeros(self.num_particles).astype(bool)
         # Parameters
         self.g = 30
-        self.density = .5
+        self.density = 1.
         self._init_particles(test)
         self.status = 'RUNNING'
 
@@ -57,7 +57,7 @@ class Scene:
         rn = np.zeros((self.num_particles, 3))
         zs = np.zeros(rn.shape)
         rn[:, :2] = self.position_array
-        zs[:, 2] = 1. / 100
+        zs[:, 2] = 1. / 200
 
         if test: zs[:, 2] = 0
 
@@ -69,7 +69,6 @@ class Scene:
         self.tiled_masses = np.tile(self.masses, self.num_particles).reshape((self.num_particles, self.num_particles))
         np.fill_diagonal(self.tiled_masses, 0)
 
-        print(self.tiled_masses)
 
     def is_within_boundaries(self, coord: Point):
         """
@@ -112,7 +111,7 @@ class Scene:
         v_end = (m1*v1_i + m2*v2_i)/(m1 + m2)
         """
 
-        sizesnn = np.tile(self.particle_size[:,0], self.num_particles).reshape(
+        sizesnn = np.tile(self.particle_size[:,0]/5, self.num_particles).reshape(
             (self.num_particles, self.num_particles))
         sizesnnT = np.transpose(sizesnn)
         threshold = sizesnn + sizesnnT
@@ -126,33 +125,26 @@ class Scene:
         annihilate = collision_idxs[0][first_smaller]
         survive = collision_idxs[1][first_smaller]
 
-        if len(survive) != 0 or len(annihilate) != 0:
-            self.position_array[survive] = (self.position_array[survive]*self.masses[survive, np.newaxis] + \
-                                            self.position_array[annihilate]*self.masses[annihilate, np.newaxis])/ \
-                                            (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
+        self.position_array[survive] = (self.position_array[survive]*self.masses[survive, np.newaxis] + \
+                                        self.position_array[annihilate]*self.masses[annihilate, np.newaxis])/ \
+                                        (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
 
-            self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
-                                            self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
-                                            (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
+        self.velocity_array[survive] = (self.masses[annihilate, np.newaxis]*self.velocity_array[annihilate] + \
+                                        self.masses[survive, np.newaxis]*self.velocity_array[survive])/ \
+                                        (self.masses[survive, np.newaxis] + self.masses[annihilate, np.newaxis])
 
-            self.masses[survive] += self.masses[annihilate]
-            self.exclude_mask[annihilate] = True
+        self.masses[survive] += self.masses[annihilate]
+        self.exclude_mask[annihilate] = True
 
-            self.tiled_masses[:,annihilate] = 0
-            self.particle_size[annihilate] = [0,0]
+        self.tiled_masses[:,annihilate] = 0
+        self.particle_size[annihilate] = [0,0]
+        self.position_array[annihilate] = [1e9,1e9]
 
-            self.tiled_masses[:,survive] += self.masses[annihilate]
-            np.fill_diagonal(self.tiled_masses, 0)
+        self.tiled_masses[:,survive] += self.masses[annihilate]
+        # Essential to remember exclude the self interaction...:
+        np.fill_diagonal(self.tiled_masses, 0)
 
-            self.masses[annihilate] = 0
-            print(self.tiled_masses)
-            print()
-
-        #if len(survive) != 0 or len(annihilate) != 0:
-        #    print(annihilate, survive)
-        #    print(self.velocity_array)
-        #    print(self.masses)
-        #    print(self.position_array)
+        self.masses[annihilate] = 0
 
         self.particle_size[:] = np.sqrt(self.masses[:,np.newaxis])*self.density
 
