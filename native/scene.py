@@ -17,7 +17,7 @@ class Scene:
         self.dt = 0.001
         self.counter = 0
         self.size = Size([100, 100])
-        self.num_particles = num_particles
+        self.num_particles = int(num_particles/2)*2
 
         # Array initialization
         self.position_array = np.zeros([self.num_particles, 2])
@@ -25,14 +25,14 @@ class Scene:
         self.accel_array = np.zeros([self.num_particles, 2])
         self.force_array = np.zeros([self.num_particles, 2])
         self.particle_size = np.zeros([self.num_particles, 2])
-        self.masses = np.ones(self.num_particles) + np.random.rand(self.num_particles)*.1
+        self.masses = np.ones(self.num_particles) + np.random.rand(self.num_particles)*1e-8
 
         self.pos_difference = np.zeros((self.num_particles, self.num_particles, 2))
         self.mask = 4
         self.exclude_mask = np.zeros(self.num_particles).astype(bool)
         # Parameters
         self.g = 30
-        self.density = 1.
+        self.density = .2
         self._init_particles(test)
         self.status = 'RUNNING'
 
@@ -48,7 +48,14 @@ class Scene:
         :return: None
         """
         # Positions
-        self.position_array[:] = self.size.array * (0.5 - np.random.random([self.num_particles, 2]))
+        rads = np.random.normal(loc = 30, scale = 10, size = int(self.num_particles/2))
+        thetas = np.random.rand(int(self.num_particles/2))*np.pi*2
+
+        rads = np.concatenate((rads, rads))
+        thetas = np.concatenate((thetas, thetas + np.pi))
+
+        self.position_array[:,0] = rads*np.cos(thetas) #self.size.array * (0.5 - np.random.random([self.num_particles, 2]))
+        self.position_array[:,1] = rads*np.sin(thetas)
         if test:
             self.position_array[:] = self.size.array * [[0.03,0.03], [-.03,-.03],[0.06,-0.06], [-.06,.06]]
 
@@ -57,7 +64,7 @@ class Scene:
         rn = np.zeros((self.num_particles, 3))
         zs = np.zeros(rn.shape)
         rn[:, :2] = self.position_array
-        zs[:, 2] = 1. / 200
+        zs[:, 2] = 20. / 100
 
         if test: zs[:, 2] = 0
 
@@ -111,7 +118,7 @@ class Scene:
         v_end = (m1*v1_i + m2*v2_i)/(m1 + m2)
         """
 
-        sizesnn = np.tile(self.particle_size[:,0]/5, self.num_particles).reshape(
+        sizesnn = np.tile(self.particle_size[:,0]/2, self.num_particles).reshape(
             (self.num_particles, self.num_particles))
         sizesnnT = np.transpose(sizesnn)
         threshold = sizesnn + sizesnnT
@@ -142,7 +149,8 @@ class Scene:
 
         self.tiled_masses[:,survive] += self.masses[annihilate]
         # Essential to remember exclude the self interaction...:
-        np.fill_diagonal(self.tiled_masses, 0)
+        self.tiled_masses[survive,survive] = 0
+        #np.fill_diagonal(self.tiled_masses, 0)
 
         self.masses[annihilate] = 0
 
