@@ -14,7 +14,7 @@ class Scene:
         :return: scene instance.
         """
         self.time = 0
-        self.dt = 0.001
+        self.dt = 0.0005
         self.counter = 0
         self.size = Size([100, 100])
         self.num_particles = int(num_particles/2)*2
@@ -32,7 +32,7 @@ class Scene:
         self.exclude_mask = np.zeros(self.num_particles).astype(bool)
         # Parameters
         self.g = 30
-        self.density = .2
+        self.density = .1
         self._init_particles(test)
         self.status = 'RUNNING'
 
@@ -64,7 +64,7 @@ class Scene:
         rn = np.zeros((self.num_particles, 3))
         zs = np.zeros(rn.shape)
         rn[:, :2] = self.position_array
-        zs[:, 2] = 20. / 100
+        zs[:, 2] = 30. / 100
 
         if test: zs[:, 2] = 0
 
